@@ -5,6 +5,28 @@
 #include <string>
 #include <vector>
 
+// struct Pose2D{
+//   char type;
+//   union {
+//     struct {
+//       double x;
+//       double y;
+//       double theta;
+//     };
+//     struct {
+//       double s;
+//       double d;
+//     };
+//   };
+// };
+
+struct Pose2D{
+  double x;
+  double y;
+  double theta;
+};
+
+
 
 // car information
 struct Car{
@@ -34,11 +56,14 @@ struct MapWaypoints{
   std::vector<double> s;
   std::vector<double> dx;
   std::vector<double> dy;
+  std::vector<float> max_speed;
+  std::vector<int> lanes_n;
+  std::vector<float> lanes_width;
 
-  std::vector<double> operator[](std::size_t idx)
-  {
-    return {x[idx], y[idx], s[idx], dx[idx], dy[idx]};
-  }
+  // std::vector<double> operator[](std::size_t idx)
+  // {
+  //   return {x[idx], y[idx], s[idx], dx[idx], dy[idx], max_speed[idx], lanes_n[idx], lanes_width[idx]};
+  // }
 };
 
 
@@ -65,8 +90,10 @@ std::string hasData(std::string s) {
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
-double deg2rad(double x) { return x * pi() / 180; }
-double rad2deg(double x) { return x * 180 / pi(); }
+inline double deg2rad(double x) { return x * pi() / 180; }
+inline double rad2deg(double x) { return x * 180 / pi(); }
+inline double mph2ms(double x) { return x * 0.44704; }
+inline double ms2mph(double x) { return x * 2.23694; }
 
 // Calculate distance between two points
 double distance(double x1, double y1, double x2, double y2) {
@@ -94,7 +121,6 @@ int closest_waypoint_index(double x, double y, const MapWaypoints &map) {
 // Returns next waypoint of the closest waypoint
 int next_waypoint_index(double x, double y, double theta, const MapWaypoints &map) {
   int closestWaypoint = closest_waypoint_index(x,y,map);
-
   double map_x = map.x[closestWaypoint];
   double map_y = map.y[closestWaypoint];
 

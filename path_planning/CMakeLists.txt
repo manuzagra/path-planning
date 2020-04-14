@@ -9,20 +9,14 @@ set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 
 include_directories(include Eigen-3.3)
 
-set(sources src/main.cpp)
+add_library(trajectory SHARED
+              src/trajectory.cpp
+              src/cubic_trajectory.cpp)
 
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-include_directories(/usr/local/include)
-include_directories(/usr/local/opt/openssl/include)
-link_directories(/usr/local/lib)
-link_directories(/usr/local/opt/openssl/lib)
-link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
-
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+set(sources
+      src/main.cpp)
 
 
 add_executable(path_planning ${sources})
 
-target_link_libraries(path_planning z ssl uv uWS)
+target_link_libraries(path_planning trajectory z ssl uv uWS)
