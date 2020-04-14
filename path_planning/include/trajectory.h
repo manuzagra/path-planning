@@ -50,26 +50,30 @@ public:
     return {new_x, new_y};
   }
 
-  double get_lane_centre_frenet(const Pose2D &p)
+  double get_lane_centre_frenet(const Pose2D &p, int lane)
   {
     int next_wp = next_waypoint_index(p.x, p.y, p.theta, _map);
     std::vector<double> p_frenet = cartesian_to_frenet(p.x, p.y, p.theta, _map);
     // int(p_frenet[1]/_map.lanes_width[next_wp]) -> lane index
     // (lane_index + 0.5) * lane_width
-    return (int(p_frenet[1]/_map.lanes_width[next_wp])+0.5)*_map.lanes_width[next_wp];
+    return (lane+0.5)*_map.lanes_width[next_wp];
   }
 
 
-  Trajectory stay_in_line(const Trajectory &prev_traj, double initial_speed, const std::vector<Detection> &detections, float distance=100.)
+
+
+
+
+
+
+  Trajectory stay_in_line(const Trajectory &prev_traj, double initial_speed, int lane, const std::vector<Detection> &detections, float distance=100.)
   {
-    double theta = 0;
-    if(prev_traj.x.size()>1){
-      theta = atan2(*(prev_traj.y.end()-2)-*(prev_traj.y.end()-1), *(prev_traj.x.end()-2)-*(prev_traj.x.end()-1));
-    }
+    // Previous trajectory will always have at least 2 points
+    double theta = atan2(*(prev_traj.y.end()-1)-*(prev_traj.y.end()-2), *(prev_traj.x.end()-1)-*(prev_traj.x.end()-2));
     Pose2D start{*(prev_traj.x.end()-1), *(prev_traj.y.end()-1), theta};
 
 
-  std::cout << "---------------------------------------------" << std::endl;
+    std::cout << "---------------------------------------------" << std::endl;
     std::cout << "start.x: " << start.x << std::endl;
     std::cout << "start.y: " << start.y << std::endl;
     std::cout << "start.theta: " << start.theta << std::endl;
@@ -79,47 +83,71 @@ public:
     std::vector<double> wp_theta;
     std::vector<double> wp_speed;
     // push the initial point
-    wp_x.push_back(start.x);
-    wp_y.push_back(start.y);
-    wp_theta.push_back(start.theta);
-    wp_speed.push_back(initial_speed);
+    // wp_x.push_back(start.x);
+    // wp_y.push_back(start.y);
+    // wp_theta.push_back(start.theta);
+    // wp_speed.push_back(initial_speed);
     // get some waypoints more
     // it is easier in frenet
     std::vector<double> start_frenet = cartesian_to_frenet(start.x, start.y, start.theta, _map);
     // probably the car will already be in the middle of the line but just in case
     // calculate the desired d, the centre of the current lane
-    double ref_d = get_lane_centre_frenet(start);
-    float distance_between_points = 20; // distance between waypoints
-    int n_points = int(distance/distance_between_points) + 1; // number of waypoints to add
+    double ref_d = get_lane_centre_frenet(start, lane);
+    float distance_between_points = 0.5; // distance between waypoints
+    int n_points = int(distance/distance_between_points); // number of waypoints to add
+    n_points -= prev_traj.x.size();
     for (int i=1; i<=n_points; ++i){
       std::vector<double> xy = frenet_to_cartesian(start_frenet[0]+i*distance_between_points, ref_d, _map);
       wp_x.push_back(xy[0]);
       wp_y.push_back(xy[1]);
       // calculate the position 1 meter before as well to get the yaw angle
-      std::vector<double> xy_1 = frenet_to_cartesian(start_frenet[0]+i*distance_between_points-0.5, ref_d, _map);
+      std::vector<double> xy_1 = frenet_to_cartesian(start_frenet[0]+i*distance_between_points-0.2, ref_d, _map);
       double theta = atan2(xy[1]-xy_1[1], xy[0]-xy_1[0]);
       wp_theta.push_back(theta);
       // get the velocity
       wp_speed.push_back(0.90*_map.max_speed[next_waypoint_index(xy[0], xy[1], theta, _map)]);
 
     }
+    // std::cout << "---------------------------------------------" << std::endl;
+    // std::cout << "wp_x.size(): " << wp_x.size() << std::endl;
+    // std::cout << "wp_y.size(): " << wp_y.size() << std::endl;
+    // std::cout << "wp_theta.size(): " << wp_theta.size() << std::endl;
+    // std::cout << "wp_speed.size(): " << wp_speed.size() << std::endl;
+    // for (int i=0; i<wp_x.size(); ++i){
+    //   std::cout << "i: " << i << std::endl;
+    //   std::cout << "x: " << wp_x[i] << std::endl;
+    //   std::cout << "y: " << wp_y[i] << std::endl;
+    //   std::cout << "theta: " << wp_theta[i] << std::endl;
+    //   std::cout << "speed: " << wp_speed[i] << std::endl;
+    // }
+
+    Trajectory traj1(prev_traj);
+    traj1.x.insert(traj1.x.end(), wp_x.begin(), wp_x.end());
+    traj1.y.insert(traj1.y.end(), wp_y.begin(), wp_y.end());
+
     std::cout << "---------------------------------------------" << std::endl;
-    std::cout << "wp_x.size(): " << wp_x.size() << std::endl;
-    std::cout << "wp_y.size(): " << wp_y.size() << std::endl;
-    std::cout << "wp_theta.size(): " << wp_theta.size() << std::endl;
-    std::cout << "wp_speed.size(): " << wp_speed.size() << std::endl;
-    for (int i=0; i<wp_x.size(); ++i){
+    std::cout << "prev_traj.x.size(): " << prev_traj.x.size() << std::endl;
+    for(int i=0; i<traj1.x.size(); ++i){
       std::cout << "i: " << i << std::endl;
-      std::cout << "x: " << wp_x[i] << std::endl;
-      std::cout << "y: " << wp_y[i] << std::endl;
-      std::cout << "theta: " << wp_theta[i] << std::endl;
-      std::cout << "speed: " << wp_speed[i] << std::endl;
+      std::cout << "traj.x[i]: " << traj1.x[i] << std::endl;
+      std::cout << "traj.y[i]: " << traj1.y[i] << std::endl;
     }
+      std::cout << "start.x: " << start.x << std::endl;
+      std::cout << "start.y: " << start.y << std::endl;
+      std::cout << "start.theta: " << start.theta << std::endl;
+
+    return traj1;
+
+
+
+
+
+
 
     // now we have all the waypoint lets generate the points
     // create a spline with
     CubicTrajectory section;
-    Trajectory traj;//(prev_traj);
+    Trajectory traj(prev_traj);
     traj.dt = _dt;
     for(int i=0; i<wp_speed.size(); ++i){
       double t = distance_between_points / ((wp_speed[i] + wp_speed[i+1]) / 2);
@@ -138,13 +166,15 @@ public:
       // }
 
     }
-    // std::cout << "---------------------------------------------" << std::endl;
-    // for(int i=0; i<traj.x.size(); ++i){
-    //   std::cout << "i: " << i << std::endl;
-    //   std::cout << "traj.x[i]: " << traj.x[i] << std::endl;
-    //   std::cout << "traj.y[i]: " << traj.y[i] << std::endl;
-    //
-    // }
+    std::cout << "---------------------------------------------" << std::endl;
+    std::cout << "prev_traj.x.size(): " << prev_traj.x.size() << std::endl;
+    std::cout << "---------------------------------------------" << std::endl;
+    for(int i=0; i<traj.x.size(); ++i){
+      std::cout << "i: " << i << std::endl;
+      std::cout << "traj.x[i]: " << traj.x[i] << std::endl;
+      std::cout << "traj.y[i]: " << traj.y[i] << std::endl;
+
+    }
 
     return traj;
   }

@@ -8,6 +8,7 @@
 #include "helpers.h"
 #include "json.hpp"
 
+
 #include "trajectory.h"
 
 
@@ -47,7 +48,6 @@ int main() {
     map_waypoints.lanes_width.push_back(4);
   }
 
-
   TrajectoryGenerator trajectory_generator(map_waypoints, 0.02);
 
   h.onMessage([&map_waypoints, &trajectory_generator]
@@ -73,34 +73,13 @@ int main() {
           std::cout << "---------------------------------------------" << std::endl;
           std::cout << "---------------------------------------------" << std::endl;
           std::cout << "---------------------------------------------" << std::endl;
-          std::cout << "car.x: " << car.x << std::endl;
-          std::cout << "car.y: " << car.y << std::endl;
-          std::cout << "car.s: " << car.s << std::endl;
-          std::cout << "car.d: " << car.d << std::endl;
-          std::cout << "car.yaw: " << car.yaw << std::endl;
+          // std::cout << "car.x: " << car.x << std::endl;
+          // std::cout << "car.y: " << car.y << std::endl;
+          // std::cout << "car.s: " << car.s << std::endl;
+          // std::cout << "car.d: " << car.d << std::endl;
+          // std::cout << "car.yaw: " << car.yaw << std::endl;
           std::cout << "car.speed: " << car.speed << std::endl;
 
-          // Previous path data given to the Planner
-          // Only points that haven been executed
-          auto previous_path_x = j[1]["previous_path_x"];
-          auto previous_path_y = j[1]["previous_path_y"];
-            std::cout << previous_path_x.size() << std::endl;
-          Trajectory traj;
-          if (previous_path_x.size()>0){
-            for(int i=0; i<previous_path_x.size(); ++i){
-              std::cout << previous_path_x << std::endl;
-              traj.x.push_back(previous_path_x[i]);
-              traj.y.push_back(previous_path_y[i]);
-            }
-          }else{
-            traj.x.push_back(car.x);
-            traj.y.push_back(car.y);
-          }
-
-
-          // // Previous path's end s and d values
-          // double end_path_s = j[1]["end_path_s"];
-          // double end_path_d = j[1]["end_path_d"];
 
           // Sensor Fusion Data, a list of all other cars on the same side
           //   of the road.
@@ -116,13 +95,40 @@ int main() {
                                            j[1]["sensor_fusion"][i][6]});
           }
 
+          // Previous path data given to the Planner
+          // Only points that havent been executed
+          auto previous_path_x = j[1]["previous_path_x"];
+          auto previous_path_y = j[1]["previous_path_y"];
+          // std::cout << previous_path_x.size() << std::endl;
+          Trajectory traj;
+          if (previous_path_x.size()>1){
+            // mantein 10 points from the previous trajectory
+            int n_points_to_maintain = 10 < previous_path_x.size() ? 10 : previous_path_x.size();
+            for(int i=0; i<n_points_to_maintain; ++i){
+              // std::cout << previous_path_x << std::endl;
+              traj.x.push_back(previous_path_x[i]);
+              traj.y.push_back(previous_path_y[i]);
+            }
+          }else{
+            traj.x.push_back(car.x - 1 * cos(car.yaw));
+            traj.y.push_back(car.y - 1 * sin(car.yaw));
+            traj.x.push_back(car.x);
+            traj.y.push_back(car.y);
+          }
+
+
+          // // Previous path's end s and d values
+          // double end_path_s = j[1]["end_path_s"];
+          // double end_path_d = j[1]["end_path_d"];
+
+
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
            */
 
-           traj = trajectory_generator.stay_in_line(traj, car.speed, detections, 100);
-
+           traj = trajectory_generator.stay_in_line(traj, car.speed, 1, detections, 20);
+           std::cout << "traj.x.size(): " << traj.x.size() << std::endl;
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
