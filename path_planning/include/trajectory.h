@@ -60,8 +60,15 @@ public:
   }
 
 
-  Trajectory stay_in_line(const Pose2D &start, double initial_speed, const std::vector<Detection> &detections, float distance=100.)
+  Trajectory stay_in_line(const Trajectory &prev_traj, double initial_speed, const std::vector<Detection> &detections, float distance=100.)
   {
+    double theta = 0;
+    if(prev_traj.x.size()>1){
+      theta = atan2(*(prev_traj.y.end()-2)-*(prev_traj.y.end()-1), *(prev_traj.x.end()-2)-*(prev_traj.x.end()-1));
+    }
+    Pose2D start{*(prev_traj.x.end()-1), *(prev_traj.y.end()-1), theta};
+
+
   std::cout << "---------------------------------------------" << std::endl;
     std::cout << "start.x: " << start.x << std::endl;
     std::cout << "start.y: " << start.y << std::endl;
@@ -112,15 +119,15 @@ public:
     // now we have all the waypoint lets generate the points
     // create a spline with
     CubicTrajectory section;
-    Trajectory traj;
+    Trajectory traj;//(prev_traj);
     traj.dt = _dt;
     for(int i=0; i<wp_speed.size(); ++i){
       double t = distance_between_points / ((wp_speed[i] + wp_speed[i+1]) / 2);
       section.set_initial(wp_x[i], wp_y[i], wp_theta[i], wp_speed[i], 0);
       section.set_final(wp_x[i+1], wp_y[i+1], wp_theta[i+1], wp_speed[i+1], t);
       std::vector<std::vector<double> > xy = section.evaluate_complete(_dt);
-      traj.x.insert(traj.x.begin(), xy[0].begin(), xy[0].end());
-      traj.y.insert(traj.y.begin(), xy[1].begin(), xy[1].end());
+      traj.x.insert(traj.x.end(), xy[0].begin(), xy[0].end());
+      traj.y.insert(traj.y.end(), xy[1].begin(), xy[1].end());
 
       // std::cout << "---------------------------------------------" << std::endl;
       // for(int i=0; i<xy[0].size(); ++i){

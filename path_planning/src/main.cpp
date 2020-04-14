@@ -82,11 +82,22 @@ int main() {
 
           // Previous path data given to the Planner
           // Only points that haven been executed
-          Trajectory prev_traj;
-          prev_traj.x = j[1]["previous_path_x"];
-          prev_traj.y = j[1]["previous_path_y"];
-          // auto previous_path_x = j[1]["previous_path_x"];
-          // auto previous_path_y = j[1]["previous_path_y"];
+          auto previous_path_x = j[1]["previous_path_x"];
+          auto previous_path_y = j[1]["previous_path_y"];
+            std::cout << previous_path_x.size() << std::endl;
+          Trajectory traj;
+          if (previous_path_x.size()>0){
+            for(int i=0; i<previous_path_x.size(); ++i){
+              std::cout << previous_path_x << std::endl;
+              traj.x.push_back(previous_path_x[i]);
+              traj.y.push_back(previous_path_y[i]);
+            }
+          }else{
+            traj.x.push_back(car.x);
+            traj.y.push_back(car.y);
+          }
+
+
           // // Previous path's end s and d values
           // double end_path_s = j[1]["end_path_s"];
           // double end_path_d = j[1]["end_path_d"];
@@ -110,7 +121,7 @@ int main() {
            *   sequentially every .02 seconds
            */
 
-           Trajectory traj = trajectory_generator.stay_in_line({car.x, car.y, car.yaw}, car.speed, detections, 100);
+           traj = trajectory_generator.stay_in_line(traj, car.speed, detections, 100);
 
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
