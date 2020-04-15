@@ -43,7 +43,7 @@ int main() {
     map_waypoints.s.push_back(s);
     map_waypoints.dx.push_back(d_x);
     map_waypoints.dy.push_back(d_y);
-    map_waypoints.max_speed.push_back(50); //mph2ms(50)); // all the waypoints have the same max speed
+    map_waypoints.max_speed.push_back(mph2ms(50)); // all the waypoints have the same max speed
     map_waypoints.lanes_n.push_back(3);
     map_waypoints.lanes_width.push_back(4);
   }
@@ -127,8 +127,9 @@ int main() {
            *   sequentially every .02 seconds
            */
 
-           traj = trajectory_generator.stay_in_line(traj, car.speed, 1, detections, 20);
+           traj = trajectory_generator.stay_in_line(traj, car.speed, 1, detections, 100);
            std::cout << "traj.x.size(): " << traj.x.size() << std::endl;
+           std::cout << "traj.y.size(): " << traj.y.size() << std::endl;
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
