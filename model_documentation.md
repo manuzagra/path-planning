@@ -60,6 +60,13 @@ This has some limitations, for example, it is not possible to do an U turn, but 
 7. Final trajectory is the part of the previous trajectory that we are reusing + the new generated points.
 
 
+##### Video
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=y4uSOT5Tzc8
+"><img src="http://img.youtube.com/vi/y4uSOT5Tzc8/0.jpg"
+alt="Path Planning in highway" border="10" /></a>
+
+
 ---
 ### Reflection
 
