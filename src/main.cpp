@@ -111,7 +111,7 @@ int main() {
            int n_wp = 5;
            int total_n_points = 50;
            // acceleration
-           double acc = 1.2;
+           double acc = 1.0;
            // number of previous points to keep
            int n_prev_points = 20;
 
